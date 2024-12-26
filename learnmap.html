@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learnmap</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link rel="icon" href="https://cdn1.iconfinder.com/data/icons/business-bicolor-3/512/social_graph-512.png" type="image/x-icon">
+
+</head>
+
+<style>
+        body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #1e1e1e;
+      color: white;
+    }
+
+    html { overflow-y: scroll; }
+    .node text {
+      font-size: 12px;
+      font-family: Arial, sans-serif;
+      fill: #eaeaea;
+      pointer-events: none;
+    }
+    .node circle {
+      fill: #ff6363;
+      stroke: #fff;
+      stroke-width: 1.5px;
+    }
+    .link {
+      stroke: #555;
+      stroke-opacity: 0.6;
+      stroke-width: 1.5px;
+    }
+    #search {
+      position: absolute;
+      top: 10px;
+      left: 60px;
+      z-index: 10;
+      padding: 5px;
+      height: 50px;
+    }
+    #searchinput {
+      padding: 15px;
+      font-size: 14px;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      width: 250px;
+      height: 30px;
+      background-color: transparent;
+      border: solid 2px white;
+      border-radius: 20px;
+      font-size: large;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #modal-links li {
+      animation: fadeIn 1s ease-in-out;
+      margin-bottom: 8px;
+    }
+
+    #modal-links a {
+      color: white;
+      text-decoration: underline;
+      transition: color 0.3s ease;
+    }
+
+    #modal-links a:hover {
+      color: #ff6363;
+    }
+
+    #modal-title{
+      height: 20px;
+      background-color: "#ff6363";
+    }
+
+    footer{
+        background-color: #ff6363;
+        margin-left: -50px;
+        margin-right: -50px;
+        padding: 20px;
+        padding-top: 10px;
+        padding-bottom: 30px;
+        background-image: url();
+        background-repeat: no-repeat;
+        background-size: 80%;
+        display: flex;
+        justify-content: space-between;
+        color: rgb(0, 0, 0);
+        font-family: Arial, Helvetica, sans-serif;}
+
+    #fimage{
+        width: 200px;}
+
+    .card {
+        margin-top: 15px;
+        width: fit-content;
+        height: fit-content;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        }
+
+    .socialContainer {
+        width: 52px;
+        height: 52px;
+        background-color: rgb(44, 44, 44);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        transition-duration: .3s;
+        }
+
+    .containerOne:hover {
+        background-color: #d62976;
+        transition-duration: .3s;
+        }
+
+    .containerTwo:hover {
+        background-color: #00acee;
+        transition-duration: .3s;
+        }
+
+    .containerThree:hover {
+        background-color: #0072b1;
+        transition-duration: .3s;
+        }
+
+    .containerFour:hover {
+        background-color: #25d366;
+        transition-duration: .3s;
+        }
+
+    .socialSvg {
+        width: 17px;
+        }
+
+    .socialSvg path {
+        fill: rgb(255, 255, 255);
+        }
+        
+    #f1, #f2, #f3 {
+            flex: 1;
+            padding-left: 400px;
+        }
+
+    #f1{
+            padding-top: 18px;
+            padding-left: 150px;
+        }
+
+    #b1{
+      background-color: white;
+      height: 20px;
+    }
+
+</style>
+
+<body>
+
+  <div id="modal" style="display: none; position: fixed; top: 20%; left: 30%; width: 40%; background: #222; color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);">
+    <h2 id="modal-title"></h2>
+    <ul id="modal-links" style="list-style: none; padding: 0;"></ul>
+    <button onclick="closeModal()" style="margin-top: 10px; padding: 5px 10px; background: #ff6363; color: #fff; border: none; border-radius: 5px; height: 40px; cursor: pointer;">Close</button>
+  </div>
+
+  <div id="search">
+    <input type="text" id="searchinput" placeholder="Quick search??">
+  </div>
+  
+  <script>
+    // Graph data
+    const graph = {
+
+        nodes: [
+
+        { id: "Programming Languages", group: 1 },
+        { id: "C", group: 1 },
+        { id: "C#", group: 1 },
+        { id: "C++", group: 1 },
+        { id: "Python", group: 1 },
+        { id: "Java", group: 1 },
+        { id: "Javascript", group: 1 },
+        { id: "SQL", group: 1 },
+        { id: "Swift", group: 1 },
+        { id: "Typescript", group: 1 },
+        { id: "Rust", group: 1 },
+        { id: "Go", group: 1 },
+        { id: "Kotlin", group: 1 },
+        { id: "PHP", group: 1 },
+        { id: "Ruby", group: 1 },
+
+        { id: "Databases", group: 2 },
+        { id: "MySQL", group: 2 },
+        { id: "MongoDB", group: 2 },
+
+        { id: "Web", group: 3 },
+        { id: "UI/UX", group: 3 },
+        { id: "HTML", group: 3 },
+        { id: "CSS", group: 3 },
+        { id: "React", group: 3 },
+        { id: "Node.js", group: 3 },
+
+        { id: "Math", group: 4 },
+        { id: "Statistics", group: 4 },
+        { id: "Algebra", group: 4 },
+        { id: "Geometry", group: 4 },
+        { id: "Calculus", group: 4 },
+
+        { id: "Machine Learning", group: 6 },
+        { id: "Data Science", group: 6 },
+        { id: "Deep Learning", group: 6 },
+        { id: "Natural Language Processing", group: 6 },
+        { id: "Computer Vision", group: 6 },
+        { id: "CPU", group: 6 },
+        { id: "GPUs", group: 6 },
+
+        { id: "Electronics", group: 7 },
+        { id: "Circuit Analysis", group: 7 },
+        { id: "Digital Logic", group: 7 },
+        { id: "Microprocessors and Microcontrollers", group: 7 },
+        { id: "FPGA", group: 7 },
+        { id: "VLSI", group: 7 },
+        { id: "Communication Electronics", group: 7 },
+        { id: "Instrumentation", group: 7 },
+        { id: "Digital Signal Processing", group: 7 },
+        { id: "Data Communication", group: 7 },
+        { id: "Power electronics", group: 7 },
+
+        { id: "Operating Systems", group: 8 },
+        { id: "Windows", group: 8 },
+        { id: "Linux", group: 8 },
+        { id: "MacOS", group: 8 },
+
+        { id: "Software engineering", group: 9 },
+        { id: "Agile", group: 9 },
+        { id: "Scrum", group: 9 },
+        { id: "Version Control", group: 9 },
+        { id: "Software Testing", group: 9 },
+        
+        { id: "Cloud computing", group: 10 },
+        { id: "AWS", group: 10 },
+        { id: "Azure", group: 10 },
+        { id: "Google Cloud", group: 10 },
+        { id: "Kubernetes", group: 10 },
+
+        { id: "Data Structures", group: 11 },
+        { id: "Arrays", group: 11 },
+        { id: "Linked Lists", group: 11 },
+        { id: "Stacks", group: 11 },
+        { id: "Queues", group: 11 },
+
+        { id: "Algorithms", group: 12 },
+        { id: "Sorting", group: 12 },
+        { id: "Searching", group: 12 },
+        { id: "Graph Algorithms", group: 12 },
+        { id: "Dynamic Programming", group: 12 },
+
+        { id: "Cyber security", group: 13 },
+        { id: "Encryption", group: 13 },
+        { id: "Authentication", group: 13 },
+        { id: "Penetration Testing", group: 13 },
+        { id: "Firewalls", group: 13 },
+
+        { id: "AI Ethics", group: 14 },
+        { id: "Bias", group: 14 },
+        { id: "Privacy", group: 14 },
+        { id: "Accountability", group: 14 },
+        { id: "Transparency", group: 14 },
+
+        { id: "Networking", group: 15 },
+        { id: "OSI Model", group: 15 },
+        { id: "TCP/IP", group: 15 },
+        { id: "Routing", group: 15 },
+        { id: "DNS", group: 15 }
+
+      ],
+      
+      links: [
+
+      //Cluster 1 
+        { source: "Programming Languages", target: "C" },
+        { source: "Programming Languages", target: "C#" },
+        { source: "Programming Languages", target: "Python" },
+        { source: "Programming Languages", target: "C++" },
+        { source: "Programming Languages", target: "Java" },
+        { source: "Programming Languages", target: "Javascript" },
+        { source: "Programming Languages", target: "SQL" },
+        { source: "Programming Languages", target: "Swift" },
+        { source: "Programming Languages", target: "Typescript" },
+        { source: "Programming Languages", target: "Rust" },
+        { source: "Programming Languages", target: "Go" },
+        { source: "Programming Languages", target: "Kotlin" },
+        { source: "Programming Languages", target: "PHP" },
+        { source: "Programming Languages", target: "Ruby" },
+
+    //Cluster 2
+        { source: "Databases", target: "MySQL" },
+        { source: "Databases", target: "MongoDB" },
+
+    //Cluster 3
+        { source: "Web", target: "UI/UX" },
+        { source: "Web", target: "HTML" },
+        { source: "Web", target: "CSS" },
+        { source: "Web", target: "React" },
+        { source: "Web", target: "Node.js" },
+
+    //Cluster 4
+        { source: "Math", target: "Statistics" },
+        { source: "Math", target: "Algebra" },
+        { source: "Math", target: "Geometry" },
+        { source: "Math", target: "Calculus" },
+
+    //Cluster 5
+        { source: "Machine Learning", target: "Data Science" },
+        { source: "Machine Learning", target: "Deep Learning" },
+        { source: "Machine Learning", target: "Natural Language Processing" },
+        { source: "Machine Learning", target: "Computer Vision" },
+        { source: "Machine Learning", target: "CPU" },
+        { source: "Machine Learning", target: "GPUs" },
+
+    //Cluster 6
+        { source: "Electronics", target: "Circuit Analysis" },
+        { source: "Electronics", target: "Digital Logic" },
+        { source: "Electronics", target: "Microprocessors and Microcontrollers" },
+        { source: "Electronics", target: "FPGA" },
+        { source: "Electronics", target: "VLSI" },
+        { source: "Electronics", target: "Communication Electronics" },
+        { source: "Electronics", target: "Instrumentation" },
+        { source: "Electronics", target: "Digital Signal Processing" },
+        { source: "Electronics", target: "Data Communication" },
+        { source: "Electronics", target: "Power electronics" },
+
+    //Cluster 7
+        { source: "Operating Systems", target: "Windows" },
+        { source: "Operating Systems", target: "Linux" },
+        { source: "Operating Systems", target: "MacOS" },
+
+    //Cluster 8
+        { source: "Software engineering", target: "Agile" },
+        { source: "Software engineering", target: "Scrum" },
+        { source: "Software engineering", target: "Version Control" },
+        { source: "Software engineering", target: "Software Testing" },
+
+    //Cluster 9
+        { source: "Cloud computing", target: "AWS" },
+        { source: "Cloud computing", target: "Azure" },
+        { source: "Cloud computing", target: "Google Cloud" },
+        { source: "Cloud computing", target: "Kubernetes" },
+
+    //Cluster 10
+        { source: "Data Structures", target: "Linked Lists" },
+        { source: "Data Structures", target: "Arrays" },
+        { source: "Data Structures", target: "Stacks" },
+        { source: "Data Structures", target: "Queues" },
+
+    //Cluster 11
+        { source: "Algorithms", target: "Sorting" },
+        { source: "Algorithms", target: "Searching" },
+        { source: "Algorithms", target: "Graph Algorithms" },
+        { source: "Algorithms", target: "Dynamic Programming" },
+
+    //Cluster 12
+        { source: "Cyber security", target: "Encryption" },
+        { source: "Cyber security", target: "Authentication" },
+        { source: "Cyber security", target: "Penetration Testing" },
+        { source: "Cyber security", target: "Firewalls" },
+
+    //Cluster 13
+        { source: "Networking", target: "OSI Model" },
+        { source: "Networking", target: "TCP/IP" },
+        { source: "Networking", target: "Routing" },
+        { source: "Networking", target: "DNS" },
+
+    //Cluster 14
+        { source: "AI Ethics", target: "Bias" },
+        { source: "AI Ethics", target: "Privacy" },
+        { source: "AI Ethics", target: "Accountability" },
+        { source: "AI Ethics", target: "Transparency" },
+
+    //Cross connections
+        { source: "Operating Systems", target: "Cloud computing" },
+        { source: "Data Structures", target: "Software engineering" },
+        { source: "Algorithms", target: "Data Structures" },
+        { source: "Cyber security", target: "Networking" },
+        { source: "Cyber security", target: "AI Ethics" },
+        { source: "C", target: "Operating Systems" },
+        { source: "Math", target: "Data Science" },
+        { source: "CPU", target: "Electronics" },
+        { source: "GPUs", target: "Electronics" },
+        { source: "CPU", target: "Microprocessors and Microcontrollers" },
+        { source: "GPUs", target: "Microprocessors and Microcontrollers" },
+        { source: "CPU", target: "VLSI" },
+        { source: "GPUs", target: "FPGA" },
+        { source: "GPUs", target: "CPU" },
+        { source: "Microprocessors and Microcontrollers", target: "VLSI" },
+        { source: "Microprocessors and Microcontrollers", target: "FPGA" },
+        { source: "VLSI", target: "FPGA" },
+        { source: "Networking", target: "Data Communication" },
+        { source: "CSS", target: "UI/UX" },
+        { source: "HTML", target: "Programming Languages" },
+        { source: "HTML", target: "CSS" },
+        { source: "Programming Languages", target: "React" },
+        { source: "Programming Languages", target: "Node.js" },
+        { source: "Swift", target: "UI/UX" },
+        { source: "Python", target: "Machine Learning" },
+        { source: "SQL", target: "Databases" },
+        { source: "SQL", target: "MySQL" },
+        { source: "AWS", target: "Azure" },
+        { source: "AWS", target: "Kubernetes" },
+        { source: "AWS", target: "Google Cloud" },
+        { source: "Azure", target: "Kubernetes" },
+        { source: "Azure", target: "Google Cloud" },
+        { source: "Google Cloud", target: "Kubernetes" },
+        { source: "Arrays", target: "Linked Lists" },
+        { source: "Arrays", target: "Stacks" },
+        { source: "Arrays", target: "Queues" },
+        { source: "Stacks", target: "Queues" },
+        { source: "Stacks", target: "Linked Lists" },
+        { source: "Stacks", target: "Queues" },
+        // { source: "Encryption", target: "Authentication" },
+        // { source: "Penetration Testing", target: "Firewalls" },
+        // { source: "Encryption", target: "Penetration Testing" },
+        // { source: "Authentication", target: "Penetration Testing" },
+        // { source: "Bias", target: "Privacy" },
+        // { source: "Accountability", target: "Privacy" },
+        // { source: "Transparency", target: "Privacy" },
+        // { source: "OSI Model", target: "TCP/IP" },
+        // { source: "TCP/IP", target: "Routing" },
+        // { source: "Routing", target: "DNS" },
+        // { source: "Data Science", target: "Machine Learning" },
+        // { source: "Deep Learning", target: "Data Science" },
+        // { source: "Natural Language Processing", target: "Data Science" },
+        // { source: "Computer Vision", target: "Deep Learning" },
+        // { source: "CPU", target: "GPUs" },
+        // { source: "Circuit Analysis", target: "Digital Logic" },
+        // { source: "Digital Logic", target: "Microprocessors and Microcontrollers" },
+        // { source: "FPGA", target: "Digital Logic" },
+        // { source: "VLSI", target: "Digital Logic" },
+        // { source: "Communication Electronics", target: "Digital Signal Processing" },
+        // { source: "Data Communication", target: "Digital Signal Processing" },
+        // { source: "Power electronics", target: "Digital Signal Processing" }
+
+
+
+
+      ],
+    };
+
+    // Set up SVG canvas
+    const width = window.innerWidth - 10;
+    const height = window.innerHeight;
+
+    const distanceThreshold = 300;
+    const maxFontSize = 17;
+    const minFontSize = 5;
+
+
+    const svg = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    // Simulation setup
+    const simulation = d3.forceSimulation(graph.nodes)
+      .force("link", d3.forceLink(graph.links).id(d => d.id).distance(150))
+      .force("charge", d3.forceManyBody().strength(-150))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collision", d3.forceCollide(50));
+
+    // Draw links (edges)
+    const link = svg.append("g")
+      .selectAll("line")
+      .data(graph.links)
+      .join("line")
+      .attr("class", "link")
+      .filter(d => calculateDistance(d.source, d.target) <= distanceThreshold);
+      
+
+    // Draw nodes
+    const node = svg.append("g")
+      .selectAll("g")
+      .data(graph.nodes)
+      .join("g")
+      .attr("class", "node");
+
+    node.append("circle")
+      .attr("r", 5)
+      .call(drag(simulation))
+      .style("cursor", "pointer");
+
+    node.append("text")
+      .attr("dx", 15)
+      .attr("dy", 5)
+      .text(d => d.id)
+      .style("font-size", d => {
+        const size = 10 + getEdgeCount(d) * 2;
+        return `${Math.min(size, maxFontSize)}px`;
+      })
+
+      /////////////////////////////////////////////////
+      .style("fill", "white")
+      .style("pointer-events", "all")
+      .on("mouseover", function (event, d) {
+        d3.select(this).style("fill", "pink");
+        d3.selectAll(".node")
+          .filter(node => node.id === selectedNodeId)
+          .style("fill", "white");
+        d3.selectAll(".node-text")
+          .filter(text => text.id === selectedNodeId)
+          .style("fill", "white");
+})
+      .on("mouseout", function (event, d) {
+        d3.select(this).style("fill", "white");
+        d3.selectAll(graph.links)
+          .filter(link => link.source.id === node.id || link.target.id === node.id)
+          .style("fill", "grey");
+        event.stopPropagation();})
+      .style("cursor", "pointer");
+
+
+  d3.selectAll('.node')
+    .on('mouseover', function (event, d) {
+      d3.select(this).style('fill', 'pink');
+      d3.selectAll('.link')
+        .filter(link => link.source === d || link.target === d)
+        .style('stroke', 'white');
+    })
+    .on('mouseout', function (event, d) {
+      d3.select(this).style('fill', 'initial');
+      d3.selectAll('.link')
+        .filter(link => link.source === d || link.target === d)
+        .style('stroke', 'grey');
+    });
+
+    // Drag behavior
+    function drag(simulation) {
+      function dragStarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      }
+
+      function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+      }
+
+      function dragEnded(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      }
+
+      return d3.drag()
+        .on("start", dragStarted)
+        .on("drag", dragged)
+        .on("end", dragEnded);
+    }
+
+    document.getElementById("searchinput").addEventListener("input", function(event) {
+      const query = event.target.value.toLowerCase();
+      node.style("display", d => d.id.toLowerCase().includes(query) ? "block" : "none");
+      link.style("display", d => d.source.id.toLowerCase().includes(query) || d.target.id.toLowerCase().includes(query) ? "block" : "none");
+    });
+
+    // Update simulation
+    simulation.on("tick", () => {
+      link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+
+      node
+        .attr("transform", d => {
+          d.x = Math.max(50, Math.min(width - 50, d.x)); // Clamp x
+          d.y = Math.max(50, Math.min(height - 50, d.y)); // Clamp y
+          return `translate(${d.x},${d.y})`;
+        });
+    });
+
+function calculateDistance(source, target) {
+  const dx = source.x - target.x;
+  const dy = source.y - target.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function getEdgeCount(node) {
+  return graph.links.filter(link => link.source.id === node.id || link.target.id === node.id).length;
+}
+  </script>
+
+<script>
+  const API_KEY = 'AIzaSyDObv6ZowtHDhU1zmhDSwalW_b-gZn5-j4'; // Replace with your Google Search API key
+  const CX = '3144ca98089234e28'; // Replace with your custom search engine ID
+
+  async function fetchLinks(query) {
+    const url = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&key=${API_KEY}&cx=${CX}`;
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.items) {
+        return data.items.map(item => ({
+          title: item.title,
+          link: item.link,
+        }));
+      } else {
+        return [];
+      }
+    } catch (error) {
+      console.error("Error fetching links:", error);
+      return [];
+    }
+  }
+
+  node.on("click", async function (event, d) {
+    const modal = document.getElementById("modal");
+    const title = document.getElementById("modal-title");
+    const linksList = document.getElementById("modal-links");
+
+    title.textContent = d.id;
+    linksList.innerHTML = "<li>Loading links...</li>";
+
+    const links = await fetchLinks(d.id);
+    linksList.innerHTML = "";
+    if (links.length > 0) {
+      links.forEach(link => {
+        const listItem = document.createElement("li");
+        const anchor = document.createElement("a");
+        anchor.href = link.link;
+        anchor.textContent = link.title;
+        anchor.target = "_blank";
+        listItem.appendChild(anchor);
+        linksList.appendChild(listItem);
+      });
+    } else {
+      linksList.innerHTML = "<li>No links found for this topic.</li>";
+    }
+
+    // Show modal
+    modal.style.display = "block";
+    modal.style.fontFamily = "Arial, sans-serif";
+    modal.style.color = "white";
+  });
+
+  function closeModal() {
+    const modal = document.getElementById("modal");
+    modal.style.display = "none";
+  }
+</script>
+
+<!-- <script async src="https://cse.google.com/cse.js?cx=3144ca98089234e28">
+</script>
+<div class="gcse-search"></div> -->
+<div id="b1"></div>
+<footer>
+  <!-- <img src="https://w0.peakpx.com/wallpaper/597/510/HD-wallpaper-nice-try-spiderman-comics-marvel-spider-stan-lee.jpg" alt="" id="fimage"> -->
+  <div id="f1">
+      MADE BY VELAN
+      <br><br>
+      &copy; 2024 LEARNMAP | All Rights Reserved
+  </div>
+  <div id="f3">
+      <div class="card">
+      <a href="https://www.instagram.com/velaneeeee/" class="socialContainer containerOne">
+          <svg class="socialSvg instagramSvg" viewBox="0 0 16 16"> <path d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.917 3.917 0 0 0-1.417.923A3.927 3.927 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.916 3.916 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.926 3.926 0 0 0-.923-1.417A3.911 3.911 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0h.003zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599.28.28.453.546.598.92.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.47 2.47 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.478 2.478 0 0 1-.92-.598 2.48 2.48 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233 0-2.136.008-2.388.046-3.231.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92.28-.28.546-.453.92-.598.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045v.002zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92zm-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217zm0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334z"></path> </svg>
+      </a>
+      
+      <a href="" class="socialContainer containerTwo">
+          <svg class="socialSvg twitterSvg" viewBox="0 0 16 16"> <path d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z"></path> </svg>              </a>
+          
+      <a href="https://www.linkedin.com/in/velan-e-40141721b/" class="socialContainer containerThree">
+          <svg class="socialSvg linkdinSvg" viewBox="0 0 448 512"><path d="M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z"></path></svg>
+      </a>
+      
+      <a href="#" class="socialContainer containerFour">
+          <svg class="socialSvg whatsappSvg" viewBox="0 0 16 16"> <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"></path> </svg>
+      </a>
+      </div>             
+
+
+  </div>
+</footer>
+
+</body>
+</html>
